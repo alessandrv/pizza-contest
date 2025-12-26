@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, Settings, Users, CheckCircle, XCircle } from "lucide-react"
+import { LogOut, Settings, XCircle } from "lucide-react"
 
 type Pizza = {
   id: string
@@ -207,67 +207,21 @@ export function VotingInterface({ pizzas, existingVotes, allUsers, allVotes, use
               </CardContent>
             </Card>
 
-            {votingStatus && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Voting Status
-                  </CardTitle>
-                  <CardDescription>Track who has voted for this pizza</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg bg-green-50 p-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold">Voted</span>
-                      </div>
-                      <Badge variant="secondary">{votingStatus.votedUsers} / {votingStatus.totalUsers}</Badge>
-                    </div>
-                    {votingStatus.votedUsernames.length > 0 && (
-                      <div className="rounded-lg bg-green-50 p-4">
-                        <div className="flex flex-wrap gap-2">
-                          {votingStatus.votedUsernames.map((username) => (
-                            <Badge key={username} variant="outline" className="bg-white">
-                              {username}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="rounded-lg bg-orange-50 p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <XCircle className="h-5 w-5 text-orange-600" />
-                          <span className="font-semibold">Pending</span>
-                        </div>
-                        <Badge variant="secondary">{votingStatus.pendingUsers} users</Badge>
-                      </div>
-                      {votingStatus.pendingUsernames.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {votingStatus.pendingUsernames.map((username) => (
-                            <Badge key={username} variant="outline">
-                              {username}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-lg bg-blue-50 p-4">
-                      <span className="font-semibold">Progress</span>
-                      <span className="text-lg font-bold">
-                        {votingStatus.totalUsers > 0
-                          ? Math.round((votingStatus.votedUsers / votingStatus.totalUsers) * 100)
-                          : 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {votingStatus && votingStatus.pendingUsers > 0 && (
+              <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <XCircle className="h-4 w-4 text-orange-600" />
+                <span className="font-medium">Missing ({votingStatus.pendingUsers}/{votingStatus.totalUsers}):</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {votingStatus.pendingUsernames.slice(0, 8).map((username) => (
+                    <Badge key={username} variant="outline" className="px-2 py-0.5 text-xs">
+                      {username}
+                    </Badge>
+                  ))}
+                  {votingStatus.pendingUsernames.length > 8 && (
+                    <span className="text-xs text-muted-foreground">+{votingStatus.pendingUsernames.length - 8}</span>
+                  )}
+                </div>
+              </div>
             )}
 
             <Card>

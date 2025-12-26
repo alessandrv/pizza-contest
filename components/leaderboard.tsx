@@ -21,6 +21,7 @@ type Vote = {
 type Pizza = {
   id: string
   name: string
+  contestant_name?: string
   votes: Vote[]
 }
 
@@ -32,6 +33,7 @@ type LeaderboardProps = {
 type PizzaScore = {
   id: string
   name: string
+  contestant_name?: string
   category1Avg: number
   category2Avg: number
   category3Avg: number
@@ -62,6 +64,7 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
           return {
             id: pizza.id,
             name: pizza.name,
+            contestant_name: (pizza as any).contestant_name,
             category1Avg: 0,
             category2Avg: 0,
             category3Avg: 0,
@@ -82,6 +85,7 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
         return {
           id: pizza.id,
           name: pizza.name,
+          contestant_name: (pizza as any).contestant_name,
           category1Avg,
           category2Avg,
           category3Avg,
@@ -117,7 +121,9 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
               {isAdmin ? (
                 <>
                   <h3 className="font-semibold">{pizza.name}</h3>
-                  <p className="text-sm text-muted-foreground">Admin View</p>
+                  {pizza.contestant_name && (
+                    <p className="text-sm text-muted-foreground">by {pizza.contestant_name}</p>
+                  )}
                 </>
               ) : (
                 <>
