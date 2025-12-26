@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { LogOut, Settings } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { LogOut, Settings, Users, CheckCircle, XCircle } from "lucide-react"
 
 type Pizza = {
   id: string
@@ -25,9 +26,22 @@ type Vote = {
   category_5: number
 }
 
+type User = {
+  id: string
+  username: string
+  is_admin: boolean
+}
+
+type AllVote = {
+  pizza_id: string
+  user_id: string
+}
+
 type VotingInterfaceProps = {
   pizzas: Pizza[]
   existingVotes: Vote[]
+  allUsers: User[]
+  allVotes: AllVote[]
   userId: string
   isAdmin: boolean
 }
@@ -40,7 +54,7 @@ const categories = [
   { key: "category_5" as const, label: "SODDISFAZIONE COMPLESSIVA", description: "Valuta zozzosità e quanto ti scalda il cuore" },
 ]
 
-export function VotingInterface({ pizzas, existingVotes, userId, isAdmin }: VotingInterfaceProps) {
+export function VotingInterface({ pizzas, existingVotes, allUsers, allVotes, userId, isAdmin }: VotingInterfaceProps) {
   const [selectedPizzaId, setSelectedPizzaId] = useState<string>(pizzas[0]?.id || "")
   const selectedPizza = pizzas.find((p) => p.id === selectedPizzaId)
   const existingVote = existingVotes.find((v) => v.pizza_id === selectedPizzaId)
@@ -56,6 +70,26 @@ export function VotingInterface({ pizzas, existingVotes, userId, isAdmin }: Voti
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  // Calculate voting status for selected pizza
+  const votingStatus = useMemo(() => {
+    if (!selectedPizzaId) return null
+
+    const votedUserIds = new Set(
+      allVotes.filter((v) => v.pizza_id === selectedPizzaId).map((v) => v.user_id)
+    )
+    
+    const votedUsers = allUsers.filter((u) => votedUserIds.has(u.id))
+    const pendingUsers = allUsers.filter((u) => !votedUserIds.has(u.id))
+
+    return {
+      totalUsers: allUsers.length,
+      votedUsers: votedUsers.length,
+      votedUsernames: votedUsers.map((u) => u.username),
+      pendingUsers: pendingUsers.length,
+      pendingUsernames: pendingUsers.map((u) => u.username),
+    }
+  }, [selectedPizzaId, allUsers, allVotes])
 
   // Update scores when pizza selection changes
   const handlePizzaChange = (pizzaId: string) => {
@@ -172,6 +206,69 @@ export function VotingInterface({ pizzas, existingVotes, userId, isAdmin }: Voti
                 </div>
               </CardContent>
             </Card>
+
+            {votingStatus && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Voting Status
+                  </CardTitle>
+                  <CardDescription>Track who has voted for this pizza</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg bg-green-50 p-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold">Voted</span>
+                      </div>
+                      <Badge variant="secondary">{votingStatus.votedUsers} / {votingStatus.totalUsers}</Badge>
+                    </div>
+                    {votingStatus.votedUsernames.length > 0 && (
+                      <div className="rounded-lg bg-green-50 p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {votingStatus.votedUsernames.map((username) => (
+                            <Badge key={username} variant="outline" className="bg-white">
+                              {username}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="rounded-lg bg-orange-50 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-5 w-5 text-orange-600" />
+                          <span className="font-semibold">Pending</span>
+                        </div>
+                        <Badge variant="secondary">{votingStatus.pendingUsers} users</Badge>
+                      </div>
+                      {votingStatus.pendingUsernames.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {votingStatus.pendingUsernames.map((username) => (
+                            <Badge key={username} variant="outline">
+                              {username}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg bg-blue-50 p-4">
+                      <span className="font-semibold">Progress</span>
+                      <span className="text-lg font-bold">
+                        {votingStatus.totalUsers > 0
+                          ? Math.round((votingStatus.votedUsers / votingStatus.totalUsers) * 100)
+                          : 0}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

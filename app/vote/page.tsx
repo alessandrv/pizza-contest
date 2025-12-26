@@ -22,6 +22,17 @@ export default async function VotePage() {
     .select("*")
     .eq("user_id", user.id)
 
+  // Get all non-admin users
+  const { data: allUsers } = await supabase
+    .from("profiles")
+    .select("id, username, is_admin")
+    .eq("is_admin", false)
+
+  // Get all votes for all pizzas
+  const { data: allVotes } = await supabase
+    .from("votes")
+    .select("pizza_id, user_id")
+
   let { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle()
 
   if (!profile) {
@@ -37,6 +48,8 @@ export default async function VotePage() {
     <VotingInterface
       pizzas={allPizzas || []}
       existingVotes={existingVotes || []}
+      allUsers={allUsers || []}
+      allVotes={allVotes || []}
       userId={user.id}
       isAdmin={profile?.is_admin || false}
     />
