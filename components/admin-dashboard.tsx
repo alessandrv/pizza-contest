@@ -12,6 +12,7 @@ import { PlusCircle, Edit2, Trash2, LogOut } from "lucide-react"
 
 type Pizza = {
   id: string
+  contestant_name?: string
   name: string
   is_active: boolean
   order_position: number
@@ -21,7 +22,7 @@ export function AdminDashboard({ pizzas: initialPizzas }: { pizzas: Pizza[] }) {
   const [pizzas, setPizzas] = useState(initialPizzas)
   const [isCreating, setIsCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [newPizza, setNewPizza] = useState({ name: "" })
+  const [newPizza, setNewPizza] = useState({ name: "", contestant_name: "" })
   const router = useRouter()
   const supabase = createClient()
 
@@ -31,11 +32,12 @@ export function AdminDashboard({ pizzas: initialPizzas }: { pizzas: Pizza[] }) {
     const maxPosition = Math.max(...pizzas.map((p) => p.order_position), 0)
     const { error } = await supabase.from("pizzas").insert({
       name: newPizza.name,
+      contestant_name: newPizza.contestant_name,
       order_position: maxPosition + 1,
     })
 
     if (!error) {
-      setNewPizza({ name: "" })
+  setNewPizza({ name: "", contestant_name: "" })
       setIsCreating(false)
       router.refresh()
     }
@@ -100,15 +102,24 @@ export function AdminDashboard({ pizzas: initialPizzas }: { pizzas: Pizza[] }) {
               </Button>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="pizza-name">Pizza Name</Label>
-                  <Input
-                    id="pizza-name"
-                    placeholder="Margherita Supreme"
-                    value={newPizza.name}
-                    onChange={(e) => setNewPizza({ ...newPizza, name: e.target.value })}
-                  />
-                </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pizza-name">Pizza Name</Label>
+                    <Input
+                      id="pizza-name"
+                      placeholder="Margherita Supreme"
+                      value={newPizza.name}
+                      onChange={(e) => setNewPizza({ ...newPizza, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="contestant-name">Contestant Name</Label>
+                    <Input
+                      id="contestant-name"
+                      placeholder="John Doe"
+                      value={newPizza.contestant_name}
+                      onChange={(e) => setNewPizza({ ...newPizza, contestant_name: e.target.value })}
+                    />
+                  </div>
                 <div className="flex gap-2">
                   <Button onClick={handleCreatePizza}>Create</Button>
                   <Button variant="outline" onClick={() => setIsCreating(false)}>
@@ -141,6 +152,15 @@ export function AdminDashboard({ pizzas: initialPizzas }: { pizzas: Pizza[] }) {
                             setPizzas(updated)
                           }}
                         />
+                        <Input
+                          value={pizza.contestant_name}
+                          onChange={(e) => {
+                            const updated = pizzas.map((p) =>
+                              p.id === pizza.id ? { ...p, contestant_name: e.target.value } : p,
+                            )
+                            setPizzas(updated)
+                          }}
+                        />
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => handleUpdatePizza(pizza.id, pizza)}>
                             Save
@@ -162,6 +182,9 @@ export function AdminDashboard({ pizzas: initialPizzas }: { pizzas: Pizza[] }) {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">{pizza.name}</h3>
+                            {pizza.contestant_name && (
+                              <p className="text-sm text-muted-foreground ml-2">by {pizza.contestant_name}</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
