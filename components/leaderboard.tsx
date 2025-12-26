@@ -34,21 +34,21 @@ type PizzaScore = {
   id: string
   name: string
   contestant_name?: string
-  category1Avg: number
-  category2Avg: number
-  category3Avg: number
-  category4Avg: number
-  category5Avg: number
-  overallAvg: number
+  category1Total: number
+  category2Total: number
+  category3Total: number
+  category4Total: number
+  category5Total: number
+  overallTotal: number
   voteCount: number
 }
 
 const categories = [
-  { key: "category1Avg" as const, label: "Mozzarellosità", tab: "mozzarella" },
-  { key: "category2Avg" as const, label: "Pomodorosità", tab: "pomodoro" },
-  { key: "category3Avg" as const, label: "Crostosità", tab: "crosta" },
-  { key: "category4Avg" as const, label: "Impasto", tab: "impasto" },
-  { key: "category5Avg" as const, label: "Soddisfazione", tab: "soddisfazione" },
+  { key: "category1Total" as const, label: "Mozzarellosità", tab: "mozzarella" },
+  { key: "category2Total" as const, label: "Pomodorosità", tab: "pomodoro" },
+  { key: "category3Total" as const, label: "Crostosità", tab: "crosta" },
+  { key: "category4Total" as const, label: "Impasto", tab: "impasto" },
+  { key: "category5Total" as const, label: "Soddisfazione", tab: "soddisfazione" },
 ]
 
 export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
@@ -65,37 +65,37 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
             id: pizza.id,
             name: pizza.name,
             contestant_name: (pizza as any).contestant_name,
-            category1Avg: 0,
-            category2Avg: 0,
-            category3Avg: 0,
-            category4Avg: 0,
-            category5Avg: 0,
-            overallAvg: 0,
+            category1Total: 0,
+            category2Total: 0,
+            category3Total: 0,
+            category4Total: 0,
+            category5Total: 0,
+            overallTotal: 0,
             voteCount: 0,
           }
         }
 
-        const category1Avg = votes.reduce((sum, v) => sum + v.category_1, 0) / votes.length
-        const category2Avg = votes.reduce((sum, v) => sum + v.category_2, 0) / votes.length
-        const category3Avg = votes.reduce((sum, v) => sum + v.category_3, 0) / votes.length
-        const category4Avg = votes.reduce((sum, v) => sum + v.category_4, 0) / votes.length
-        const category5Avg = votes.reduce((sum, v) => sum + v.category_5, 0) / votes.length
-        const overallAvg = (category1Avg + category2Avg + category3Avg + category4Avg + category5Avg) / 5
+        const category1Total = votes.reduce((sum, v) => sum + v.category_1, 0)
+        const category2Total = votes.reduce((sum, v) => sum + v.category_2, 0)
+        const category3Total = votes.reduce((sum, v) => sum + v.category_3, 0)
+        const category4Total = votes.reduce((sum, v) => sum + v.category_4, 0)
+        const category5Total = votes.reduce((sum, v) => sum + v.category_5, 0)
+        const overallTotal = category1Total + category2Total + category3Total + category4Total + category5Total
 
         return {
           id: pizza.id,
           name: pizza.name,
           contestant_name: (pizza as any).contestant_name,
-          category1Avg,
-          category2Avg,
-          category3Avg,
-          category4Avg,
-          category5Avg,
-          overallAvg,
+          category1Total,
+          category2Total,
+          category3Total,
+          category4Total,
+          category5Total,
+          overallTotal,
           voteCount: votes.length,
         }
       })
-      .sort((a, b) => b.overallAvg - a.overallAvg)
+      .sort((a, b) => b.overallTotal - a.overallTotal)
   }, [pizzas])
 
   const getSortedByCategory = (categoryKey: keyof PizzaScore) => {
@@ -135,16 +135,16 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
             <div className="text-right">
               <div className="text-2xl font-bold text-orange-600">
                 {selectedTab === "overall"
-                  ? pizza.overallAvg.toFixed(2)
+                  ? pizza.overallTotal.toFixed(1)
                   : selectedTab === "mozzarella"
-                    ? pizza.category1Avg.toFixed(2)
+                    ? pizza.category1Total.toFixed(1)
                     : selectedTab === "pomodoro"
-                      ? pizza.category2Avg.toFixed(2)
+                      ? pizza.category2Total.toFixed(1)
                       : selectedTab === "crosta"
-                        ? pizza.category3Avg.toFixed(2)
+                        ? pizza.category3Total.toFixed(1)
                         : selectedTab === "impasto"
-                          ? pizza.category4Avg.toFixed(2)
-                          : pizza.category5Avg.toFixed(2)}
+                          ? pizza.category4Total.toFixed(1)
+                          : pizza.category5Total.toFixed(1)}
               </div>
               <Badge variant="secondary" className="mt-1">
                 {pizza.voteCount} {pizza.voteCount === 1 ? "vote" : "votes"}
