@@ -8,7 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, LogOut, Settings, Trophy } from "lucide-react"
+import { ArrowLeft, LogOut, Settings, Trophy, ChevronDown, ChevronUp } from "lucide-react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 type Vote = {
   category_1: number
@@ -16,6 +21,17 @@ type Vote = {
   category_3: number
   category_4: number
   category_5: number
+  user_id: string
+  profiles?: {
+    username: string
+    is_admin: boolean
+  }
+}
+
+type User = {
+  id: string
+  username: string
+  is_admin: boolean
 }
 
 type Pizza = {
@@ -27,6 +43,7 @@ type Pizza = {
 
 type LeaderboardProps = {
   pizzas: Pizza[]
+  allUsers: User[]
   isAdmin: boolean
 }
 
@@ -41,6 +58,7 @@ type PizzaScore = {
   category5Total: number
   overallTotal: number
   voteCount: number
+  votes: Vote[]
 }
 
 const categories = [
@@ -51,8 +69,9 @@ const categories = [
   { key: "category5Total" as const, label: "Soddisfazione", tab: "soddisfazione" },
 ]
 
-export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
+export function Leaderboard({ pizzas, allUsers, isAdmin }: LeaderboardProps) {
   const [selectedTab, setSelectedTab] = useState("overall")
+  const [expandedPizzaId, setExpandedPizzaId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -72,6 +91,7 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
             category5Total: 0,
             overallTotal: 0,
             voteCount: 0,
+            votes: [],
           }
         }
 
@@ -93,6 +113,7 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
           category5Total,
           overallTotal,
           voteCount: votes.length,
+          votes: pizza.votes,
         }
       })
       .sort((a, b) => b.overallTotal - a.overallTotal)
@@ -112,46 +133,105 @@ export function Leaderboard({ pizzas, isAdmin }: LeaderboardProps) {
       {data.length === 0 ? (
         <p className="text-center text-muted-foreground">No votes yet. Be the first to vote!</p>
       ) : (
-        data.map((pizza, index) => (
-          <div key={pizza.id} className="flex items-center gap-4 rounded-lg border p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-xl font-bold text-white">
-              {index === 0 ? <Trophy className="h-6 w-6" /> : index + 1}
-            </div>
-            <div className="flex-1">
-              {isAdmin ? (
-                <>
-                  <h3 className="font-semibold">{pizza.name}</h3>
-                  {pizza.contestant_name && (
-                    <p className="text-sm text-muted-foreground">by {pizza.contestant_name}</p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h3 className="font-semibold">Pizza #{index + 1}</h3>
-                  <p className="text-sm text-muted-foreground">Contestant hidden</p>
-                </>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-orange-600">
-                {selectedTab === "overall"
-                  ? pizza.overallTotal.toFixed(1)
-                  : selectedTab === "mozzarella"
-                    ? pizza.category1Total.toFixed(1)
-                    : selectedTab === "pomodoro"
-                      ? pizza.category2Total.toFixed(1)
-                      : selectedTab === "crosta"
-                        ? pizza.category3Total.toFixed(1)
-                        : selectedTab === "impasto"
-                          ? pizza.category4Total.toFixed(1)
-                          : pizza.category5Total.toFixed(1)}
+        data.map((pizza, index) => {
+          const votedUserIds = new Set(pizza.votes.map((v) => v.user_id))
+          const missingUsers = allUsers.filter((u) => !votedUserIds.has(u.id))
+          
+          return (
+            <Collapsible
+              key={pizza.id}
+              open={expandedPizzaId === pizza.id}
+              onOpenChange={(open) => setExpandedPizzaId(open ? pizza.id : null)}
+            >
+              <div className="rounded-lg border">
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-xl font-bold text-white">
+                      {index === 0 ? <Trophy className="h-6 w-6" /> : index + 1}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-semibold">{pizza.name}</h3>
+                      {isAdmin && pizza.contestant_name && (
+                        <p className="text-sm text-muted-foreground">by {pizza.contestant_name}</p>
+                      )}
+                    </div>
+                    <div className="text-right flex items-center gap-4">
+                      <div>
+                        <div className="text-2xl font-bold text-orange-600">
+                          {selectedTab === "overall"
+                            ? pizza.overallTotal.toFixed(1)
+                            : selectedTab === "mozzarella"
+                              ? pizza.category1Total.toFixed(1)
+                              : selectedTab === "pomodoro"
+                                ? pizza.category2Total.toFixed(1)
+                                : selectedTab === "crosta"
+                                  ? pizza.category3Total.toFixed(1)
+                                  : selectedTab === "impasto"
+                                    ? pizza.category4Total.toFixed(1)
+                                    : pizza.category5Total.toFixed(1)}
+                        </div>
+                        <Badge variant="secondary" className="mt-1">
+                          {pizza.voteCount} {pizza.voteCount === 1 ? "vote" : "votes"}
+                        </Badge>
+                      </div>
+                      {expandedPizzaId === pizza.id ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <div className="border-t p-4 bg-muted/30">
+                    <h4 className="font-semibold mb-3 text-sm">Vote Breakdown</h4>
+                    <div className="space-y-2">
+                      {/* Show users who voted */}
+                      {pizza.votes.map((vote) => (
+                        <div key={vote.user_id} className="flex items-center justify-between text-sm border-b pb-2">
+                          <span className="font-medium">{vote.profiles?.username || "Unknown"}</span>
+                          <div className="flex gap-4 text-xs">
+                            {selectedTab === "overall" ? (
+                              <>
+                                <span>M: {vote.category_1}</span>
+                                <span>P: {vote.category_2}</span>
+                                <span>C: {vote.category_3}</span>
+                                <span>I: {vote.category_4}</span>
+                                <span>S: {vote.category_5}</span>
+                                <span className="font-semibold">
+                                  Tot: {(vote.category_1 + vote.category_2 + vote.category_3 + vote.category_4 + vote.category_5).toFixed(1)}
+                                </span>
+                              </>
+                            ) : selectedTab === "mozzarella" ? (
+                              <span className="font-semibold">{vote.category_1}</span>
+                            ) : selectedTab === "pomodoro" ? (
+                              <span className="font-semibold">{vote.category_2}</span>
+                            ) : selectedTab === "crosta" ? (
+                              <span className="font-semibold">{vote.category_3}</span>
+                            ) : selectedTab === "impasto" ? (
+                              <span className="font-semibold">{vote.category_4}</span>
+                            ) : (
+                              <span className="font-semibold">{vote.category_5}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Show missing users */}
+                      {missingUsers.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between text-sm border-b pb-2 text-muted-foreground">
+                          <span>{user.username}</span>
+                          <span className="text-xs">?</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CollapsibleContent>
               </div>
-              <Badge variant="secondary" className="mt-1">
-                {pizza.voteCount} {pizza.voteCount === 1 ? "vote" : "votes"}
-              </Badge>
-            </div>
-          </div>
-        ))
+            </Collapsible>
+          )
+        })
       )}
     </div>
   )

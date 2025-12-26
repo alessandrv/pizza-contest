@@ -26,10 +26,17 @@ export default async function LeaderboardPage() {
         category_5,
         user_id,
         profiles (
-          is_admin
+          is_admin,
+          username
         )
       )
     `)
+
+  // Get all non-admin users for tracking who hasn't voted
+  const { data: allUsers } = await supabase
+    .from("profiles")
+    .select("id, username, is_admin")
+    .eq("is_admin", false)
 
   // Filter out votes that belong to admin users (if profile included)
   const pizzasWithFilteredVotes = pizzas?.map((pizza: any) => ({
@@ -39,5 +46,5 @@ export default async function LeaderboardPage() {
 
   const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
 
-  return <Leaderboard pizzas={pizzasWithFilteredVotes || []} isAdmin={profile?.is_admin || false} />
+  return <Leaderboard pizzas={pizzasWithFilteredVotes || []} allUsers={allUsers || []} isAdmin={profile?.is_admin || false} />
 }
